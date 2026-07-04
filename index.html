@@ -1,769 +1,961 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Crypto P2P UI Clone</title>
-<style>
-  :root {
-    --bg-color: #141821;
-    --card-bg: #1b212d;
-    --card-alt: #222936;
-    --text-primary: #ffffff;
-    --text-secondary: #8e98b0;
-    --text-tertiary: #b7bdc9;
-    --color-green: #00c087;
-    --color-red: #f6465d; /* 新增红色 */
-    --color-yellow: #f8d549;
-    --border-color: #2c3442;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-
-  body {
-    background-color: #0e121b;
-    display: flex;
-    justify-content: center;
-    color: var(--text-primary);
-  }
-
-  .app-container {
-    width: 100%;
-    max-width: 420px;
-    background-color: var(--bg-color);
-    min-height: 100vh;
-    padding: 12px 16px 20px;
-    position: relative;
-  }
-
-  .header {
-    position: relative;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 16px;
-    font-size: 18px;
-    font-weight: 500;
-  }
-  .header-left, .header-right { display: flex; align-items: center; gap: 12px; }
-  
-  .header-title {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    white-space: nowrap;
-    z-index: 1;
-  }
-  
-  .header-title .nav-item {
-    color: var(--text-secondary);
-    font-weight: 500;
-    transition: color 0.2s;
-  }
-  .header-title .nav-item.active {
-    color: var(--text-primary);
-    font-weight: 600;
-  }
-
-  .action-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 16px;
-  }
-  .toggle-group {
-    display: flex;
-    background: var(--card-bg);
-    border-radius: 20px;
-    padding: 3px;
-    cursor: pointer;
-  }
-  .toggle-btn {
-    padding: 8px 20px;
-    border: none;
-    border-radius: 18px;
-    background: transparent;
-    color: var(--text-secondary);
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .toggle-btn.active {
-    background: #ffffff;
-    color: #000000;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  }
-
-  /* CNY 下拉菜单 */
-  .currency-wrapper {
-    position: relative;
-    margin-left: auto;
-  }
-  .currency-btn {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 4px 12px;
-    border-radius: 16px;
-    font-size: 14px;
-    cursor: pointer;
-    min-width: 70px;
-    text-align: center;
-  }
-  .currency-dropdown {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 4px 0;
-    min-width: 100%;
-    list-style: none;
-    display: none;
-    z-index: 100;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    overflow: hidden;
-  }
-  .currency-dropdown.active { display: block; }
-  .currency-dropdown li {
-    padding: 10px 16px;
-    color: var(--text-primary);
-    font-size: 14px;
-    cursor: pointer;
-    text-align: center;
-    transition: background 0.15s;
-  }
-  .currency-dropdown li:hover { background: var(--card-alt); }
-
-  /* 过滤栏 */
-  .filter-bar {
-    display: flex;
-    gap: 12px;
-    padding-bottom: 16px;
-    flex-wrap: nowrap;
-    overflow-x: visible;
-    align-items: center;
-  }
-  .filter-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--text-secondary);
-    font-size: 14px;
-    white-space: nowrap;
-  }
-  .filter-item.active { color: var(--color-green); }
-  
-  /* 支付下拉菜单 */
-  .pay-wrapper {
-    position: relative;
-    cursor: pointer;
-    z-index: 10;
-  }
-  .pay-trigger {
-    color: var(--text-secondary);
-    font-size: 14px;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .pay-dropdown {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 4px 0;
-    min-width: 120px;
-    list-style: none;
-    display: none;
-    z-index: 100;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    overflow: hidden;
-  }
-  .pay-dropdown.active { display: block; }
-  .pay-dropdown li {
-    padding: 10px 16px;
-    color: var(--text-primary);
-    font-size: 14px;
-    cursor: pointer;
-    text-align: left;
-    transition: background 0.15s;
-  }
-  .pay-dropdown li:hover { background: var(--card-alt); }
-
-  .filter-check {
-    display: flex;
-    align-items: center;
-    color: var(--text-secondary);
-    font-size: 14px;
-    margin-left: auto;
-  }
-  .filter-check input { accent-color: var(--color-green); margin-right: 6px; }
-
-  .list-view {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .card {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    position: relative;
-  }
-
-  .card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-  .seller-name {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 500;
-    font-size: 15px;
-    flex-wrap: wrap;
-  }
-  .tags { display: flex; gap: 4px; }
-  .tag {
-    background: var(--card-alt);
-    color: #c5cbd6;
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 10px;
-  }
-  .tag.gold { background: #333026; color: var(--color-yellow); }
-  
-  .order-stats {
-    font-size: 12px;
-    color: var(--text-secondary);
-  }
-
-  .price-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 2px;
-  }
-  .price-left {
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-  }
-  .price { font-size: 26px; font-weight: 600; color: var(--text-primary); }
-  .unit { font-size: 14px; color: var(--text-secondary); }
-
-  .price-right-pay {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    font-size: 14px;
-    color: var(--text-primary);
-  }
-
-  .limit-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    position: relative;
-  }
-  .limit-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex: 1;
-  }
-  .limit-text { font-size: 12px; color: var(--text-secondary); }
-  .limit-text span { color: var(--text-primary); }
-  
-  .meta-info {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-    margin-left: 12px;
-    justify-content: flex-start;
-  }
-  .time-limit {
-    font-size: 11px;
-    color: var(--text-secondary);
-    margin-top: 0px; 
-  }
-
-  .action-row {
-    position: absolute;
-    right: 0px;
-    bottom: 0px;
-    display: flex;
-    justify-content: flex-end;
-  }
-  
-  /* 买入按钮样式 */
-  .buy-btn {
-    background-color: var(--color-green);
-    color: #ffffff;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 28px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-  }
-
-  /* 卖出按钮样式（新增红色） */
-  .sell-btn {
-    background-color: var(--color-red);
-    color: #ffffff;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 28px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-  }
-
-  .floating-action {
-    position: fixed;
-    right: 20px;
-    bottom: 100px;
-    width: 44px;
-    height: 44px;
-    background: #3a4050;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-  }
-  .floating-action svg { fill: #ffffff; width: 20px; height: 20px; transform: rotate(-45deg); }
-
-  .icon { width: 20px; height: 20px; fill: currentColor; }
-</style>
-</head>
-<body>
-
-<div class="app-container">
-  
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <svg class="icon" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-    </div>
-    <div class="header-title">
-      <span class="nav-item active">OTC交易</span>
-      <span class="nav-item">订单详情</span>
-    </div>
-    <div class="header-right">
-      <svg class="icon" style="color:var(--text-secondary);" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
-    </div>
-  </div>
-
-  <!-- Action Bar -->
-  <div class="action-bar">
-    <div class="toggle-group" id="toggleGroup">
-      <button class="toggle-btn active" data-target="buy">我要买</button>
-      <button class="toggle-btn" data-target="sell">我要卖</button>
-    </div>
-    <div class="currency-wrapper" id="currencyWrapper">
-      <button class="currency-btn" id="currencyBtn">CNY ▾</button>
-      <ul class="currency-dropdown" id="currencyDropdown">
-        <li data-value="欧阳">欧阳</li>
-        <li data-value="美元">美元</li>
-        <li data-value="英镑">英镑</li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- Filter Bar -->
-  <div class="filter-bar">
-    <div class="filter-item active">
-      <span>T</span> USDT ▾
-    </div>
-    <div class="filter-item">金额 ▾</div>
-    
-    <div class="pay-wrapper" id="payWrapper">
-      <div class="pay-trigger" id="payBtn">支付 ▾</div>
-      <ul class="pay-dropdown" id="payDropdown">
-        <li data-value="微信">微信</li>
-        <li data-value="支付宝">支付宝</li>
-        <li data-value="银行借记卡">银行借记卡</li>
-      </ul>
-    </div>
-    
-    <div class="filter-check">
-      <input type="checkbox" checked> 神盾
-    </div>
-    <svg class="icon" style="color:var(--text-secondary); margin-left:8px; width:18px;" viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
-  </div>
-
-  <!-- ================= 我要买 列表 ================= -->
-  <div class="list-view" id="buyList">
-    <!-- Card 1 -->
-    <div class="card">
-      <div class="card-top">
-        <div class="seller-name">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" fill="#00c087" />
-          </svg>
-          遥遥领先-五年老店-安全零冻全球
-          <div class="tags">
-            <span class="tag gold">保证金</span>
-            <span class="tag gold">⭐⭐⭐⭐⭐</span>
-          </div>
-        </div>
-        <svg style="width:32px; height:32px;" viewBox="0 0 24 24" fill="none"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="rgba(114, 106, 255, 0.3)"/></svg>
-      </div>
-      <div class="order-stats">交易: 9860 订单 (100.00%)</div>
-      
-      <div class="price-row">
-        <div class="price-left">
-          <span class="price">¥6.77</span>
-          <span class="unit">/USDT</span>
-        </div>
-        <div class="price-right-pay">
-          <span>支付宝</span>
-          <span style="font-size:18px; margin-left:2px;">ⓘ</span>
-        </div>
-      </div>
-
-      <div class="limit-row">
-        <div class="limit-info">
-          <div class="limit-text">保证金：<span>0.00 USDT</span></div>
-          <div class="limit-text">限额 <span>400 - 799 CNY</span></div>
-          <div class="limit-text">可用 <span>289.93 USDT</span></div>
-        </div>
-        <div class="meta-info">
-          <div class="time-limit">🕒 15 分钟</div>
-        </div>
-
-        <div class="action-row">
-          <button class="buy-btn">买入</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 2 -->
-    <div class="card">
-      <div class="card-top">
-        <div class="seller-name">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" fill="#00c087" />
-          </svg>
-          神盾严选专区100万单老商家
-          <div class="tags">
-            <span class="tag gold">保证金</span>
-            <span class="tag gold">⭐⭐⭐⭐⭐</span>
-          </div>
-        </div>
-      </div>
-      <div class="order-stats">交易: 41904 订单 (100.00%)</div>
-      
-      <div class="price-row">
-        <div class="price-left">
-          <span class="price">¥6.77</span>
-          <span class="unit">/USDT</span>
-        </div>
-        <div class="price-right-pay">
-          <span>支付宝</span>
-          <span style="font-size:18px; margin-left:2px;">ⓘ</span>
-        </div>
-      </div>
-
-      <div class="limit-row">
-        <div class="limit-info">
-          <div class="limit-text">保证金：<span>0.00 USDT</span></div>
-          <div class="limit-text">限额 <span>300 - 799 CNY</span></div>
-          <div class="limit-text">可用 <span>2,627.14 USDT</span></div>
-        </div>
-        <div class="meta-info">
-          <div class="time-limit">🕒 15 分钟</div>
-        </div>
-
-        <div class="action-row">
-          <button class="buy-btn">买入</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 3 -->
-    <div class="card">
-      <div class="card-top">
-        <div class="seller-name">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" fill="#00c087" />
-          </svg>
-          聚优商行-24h
-          <div class="tags">
-            <span class="tag gold">保证金</span>
-            <span class="tag gold">⭐⭐⭐⭐⭐</span>
-          </div>
-        </div>
-      </div>
-      <div class="order-stats">交易: 862 订单 (100.00%)</div>
-      
-      <div class="price-row">
-        <div class="price-left">
-          <span class="price">¥6.77</span>
-          <span class="unit">/USDT</span>
-        </div>
-        <div class="price-right-pay">
-          <span>银行</span>
-          <span style="font-size:18px; margin-left:2px;">ⓘ</span>
-        </div>
-      </div>
-
-      <div class="limit-row">
-        <div class="limit-info">
-          <div class="limit-text">保证金：<span>0.00 USDT</span></div>
-          <div class="limit-text">限额 <span>30,000 - 135,990 CNY</span></div>
-          <div class="limit-text">可用 <span>20,087.27 USDT</span></div>
-        </div>
-
-        <div class="meta-info">
-          <div class="time-limit">🕒 15 分钟</div>
-        </div>
-
-        <div class="action-row">
-          <button class="buy-btn">买入</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= 我要卖 列表（默认隐藏） ================= -->
-  <div class="list-view" id="sellList" style="display:none;">
-    <!-- Card 1 (卖) -->
-    <div class="card">
-      <div class="card-top">
-        <div class="seller-name">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" fill="#00c087" />
-          </svg>
-          遥遥领先-五年老店-安全零冻
-          <div class="tags">
-            <span class="tag gold">保证金</span>
-            <span class="tag gold">⭐⭐⭐⭐⭐</span>
-          </div>
-        </div>
-        <svg style="width:32px; height:32px;" viewBox="0 0 24 24" fill="none"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="rgba(114, 106, 255, 0.3)"/></svg>
-      </div>
-      <div class="order-stats">交易: 9860 订单 (100.00%)</div>
-      
-      <div class="price-row">
-        <div class="price-left">
-          <span class="price">¥6.77</span>
-          <span class="unit">/USDT</span>
-        </div>
-        <div class="price-right-pay">
-          <span>支付宝</span>
-          <span style="font-size:18px; margin-left:2px;">ⓘ</span>
-        </div>
-      </div>
-
-      <div class="limit-row">
-        <div class="limit-info">
-          <div class="limit-text">保证金：<span>0.00 USDT</span></div>
-          <div class="limit-text">限额 <span>400 - 799 CNY</span></div>
-          <div class="limit-text">可用 <span>289.93 USDT</span></div>
-        </div>
-        <div class="meta-info">
-          <div class="time-limit">🕒 15 分钟</div>
-        </div>
-
-        <div class="action-row">
-          <button class="sell-btn">卖出</button> <!-- 红色按钮，名称为卖出 -->
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 2 (卖) -->
-    <div class="card">
-      <div class="card-top">
-        <div class="seller-name">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" fill="#00c087" />
-          </svg>
-          神盾严选专区100万单老商家
-          <div class="tags">
-            <span class="tag gold">保证金</span>
-            <span class="tag gold">⭐⭐⭐⭐⭐</span>
-          </div>
-        </div>
-      </div>
-      <div class="order-stats">交易: 41904 订单 (100.00%)</div>
-      
-      <div class="price-row">
-        <div class="price-left">
-          <span class="price">¥6.77</span>
-          <span class="unit">/USDT</span>
-        </div>
-        <div class="price-right-pay">
-          <span>支付宝</span>
-          <span style="font-size:18px; margin-left:2px;">ⓘ</span>
-        </div>
-      </div>
-
-      <div class="limit-row">
-        <div class="limit-info">
-          <div class="limit-text">保证金：<span>0.00 USDT</span></div>
-          <div class="limit-text">限额 <span>300 - 799 CNY</span></div>
-          <div class="limit-text">可用 <span>2,627.14 USDT</span></div>
-        </div>
-        <div class="meta-info">
-          <div class="time-limit">🕒 15 分钟</div>
-        </div>
-
-        <div class="action-row">
-          <button class="sell-btn">卖出</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 3 (卖) -->
-    <div class="card">
-      <div class="card-top">
-        <div class="seller-name">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" fill="#00c087" />
-          </svg>
-          聚优商行-24h
-          <div class="tags">
-            <span class="tag gold">保证金</span>
-            <span class="tag gold">⭐⭐⭐⭐⭐</span>
-          </div>
-        </div>
-      </div>
-      <div class="order-stats">交易: 862 订单 (100.00%)</div>
-      
-      <div class="price-row">
-        <div class="price-left">
-          <span class="price">¥6.77</span>
-          <span class="unit">/USDT</span>
-        </div>
-        <div class="price-right-pay">
-          <span>银行</span>
-          <span style="font-size:18px; margin-left:2px;">ⓘ</span>
-        </div>
-      </div>
-
-      <div class="limit-row">
-        <div class="limit-info">
-          <div class="limit-text">保证金：<span>0.00 USDT</span></div>
-          <div class="limit-text">限额 <span>30,000 - 135,990 CNY</span></div>
-          <div class="limit-text">可用 <span>20,087.27 USDT</span></div>
-        </div>
-
-        <div class="meta-info">
-          <div class="time-limit">🕒 15 分钟</div>
-        </div>
-
-        <div class="action-row">
-          <button class="sell-btn">卖出</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Floating Button -->
-  <div class="floating-action">
-    <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
-  </div>
-
-</div>
-
-<!-- JS 实现多下拉菜单与 Tab 切换逻辑 -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    
-    // --- 1. CNY 下拉菜单逻辑 ---
-    const currencyWrapper = document.getElementById('currencyWrapper');
-    const currencyBtn = document.getElementById('currencyBtn');
-    const currencyDropdown = document.getElementById('currencyDropdown');
-    const currencyOptions = currencyDropdown.querySelectorAll('li');
-
-    currencyBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      currencyDropdown.classList.toggle('active');
-    });
-
-    currencyOptions.forEach(option => {
-      option.addEventListener('click', function(e) {
-        e.stopPropagation();
-        const selectedValue = this.getAttribute('data-value');
-        currencyBtn.innerHTML = selectedValue + ' ▾';
-        currencyDropdown.classList.remove('active');
-      });
-    });
-
-    // --- 2. 支付下拉菜单逻辑 ---
-    const payWrapper = document.getElementById('payWrapper');
-    const payBtn = document.getElementById('payBtn');
-    const payDropdown = document.getElementById('payDropdown');
-    const payOptions = payDropdown.querySelectorAll('li');
-
-    payBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      payDropdown.classList.toggle('active');
-    });
-
-    payOptions.forEach(option => {
-      option.addEventListener('click', function(e) {
-        e.stopPropagation();
-        const selectedValue = this.getAttribute('data-value');
-        payBtn.innerHTML = selectedValue + ' ▾';
-        payDropdown.classList.remove('active');
-      });
-    });
-
-    // --- 3. 我要买 / 我要卖 切换逻辑 ---
-    const toggleGroup = document.getElementById('toggleGroup');
-    const toggleBtns = toggleGroup.querySelectorAll('.toggle-btn');
-    const buyList = document.getElementById('buyList');
-    const sellList = document.getElementById('sellList');
-
-    toggleBtns.forEach(btn => {
-      btn.addEventListener('click', function() {
-        // 切换按钮高亮状态
-        toggleBtns.forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-
-        // 切换列表显示隐藏
-        const target = this.getAttribute('data-target');
-        if (target === 'buy') {
-          buyList.style.display = 'flex';
-          sellList.style.display = 'none';
-        } else if (target === 'sell') {
-          sellList.style.display = 'flex';
-          buyList.style.display = 'none';
+<div id="page-trade" class="page-container">
+    <style>
+        .glass-card { 
+            background: rgba(18,22,40,0.7); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; 
+            padding: 20px; 
+            margin-bottom: 15px; 
+            color: #ccd6f0; 
+            overflow: hidden;
         }
-      });
-    });
+        .swap-title { font-size: 16px; font-weight: bold; margin-bottom: 4px; color: #f0b90b; }
+        .swap-title span { cursor: pointer; margin-right: 12px; }
+        .swap-title .tab-link { color: #a3adc9; }
+        .swap-title .tab-link.active { color: #f0b90b; }
 
-    // --- 4. 全局点击关闭下拉菜单 ---
-    document.addEventListener('click', function(e) {
-      if (!currencyWrapper.contains(e.target)) {
-        currencyDropdown.classList.remove('active');
-      }
-      if (!payWrapper.contains(e.target)) {
-        payDropdown.classList.remove('active');
-      }
-    });
-  });
-</script>
+        .dex-switch {
+            display: flex; 
+            margin: -20px -20px 0 -20px;
+            border-bottom: 1px solid #2d325a;
+        }
+        .dex-btn {
+            flex: 1; padding: 10px 0; font-size: 14px; font-weight: 600; background: #0d1125; color: #a3adc9;
+            border: none; cursor: pointer; transition: background 0.2s, color 0.2s; text-align: center;
+            display: flex; align-items: center; justify-content: center; gap: 4px;
+        }
+        .dex-btn:first-child { border-right: 1px solid #2d325a; }
+        .dex-btn.active { background: #f0b90b; color: #0b0f1a; }
+        .dex-btn:active { opacity: 0.8; }
 
-</body>
-</html>
+        .dex-slogan {
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            padding: 10px 0 12px 0;
+            margin: 0 -20px;
+        }
+        
+        .search-wrapper { position: relative; margin-bottom: 14px; }
+        .token-search {
+            width: 100%; padding: 10px 40px 10px 14px; background: #0d1125; border: 1px solid #2d325a;
+            border-radius: 12px; color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s;
+        }
+        .token-search::placeholder { color: #6b7394; }
+        .token-search:focus { border-color: #4ecca3; }
+        .search-icon {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; color: #6b7394; cursor: pointer; font-size: 18px;
+            padding: 4px; display: flex; align-items: center; justify-content: center;
+        }
+        .search-icon:active { color: #4ecca3; }
+
+        .input-row {
+            background: #0d1125; border: 1px solid #2d325a; border-radius: 16px;
+            padding: 12px 15px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .input-row input {
+            background: transparent; border: none; color: #fff; font-size: 20px;
+            width: 60%; outline: none; -moz-appearance: textfield;
+        }
+        .input-row input::-webkit-outer-spin-button,
+        .input-row input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .input-row .input-with-plus {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+        .input-row .input-with-plus span {
+            color: #fff;
+            font-size: 20px;
+            margin-right: 4px;
+        }
+        .input-row .input-with-plus input {
+            width: 100%;
+        }
+        .token-select {
+            background: #2d325a; border: none; color: #fff; padding: 8px 14px;
+            border-radius: 20px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+        }
+        .balance-row { text-align: right; font-size: 12px; color: #888; padding: 0 10px; margin-bottom: 8px; }
+        .max-btn {
+            color: #f0b90b; cursor: pointer; margin-left: 4px; text-decoration: none; font-weight: 500;
+        }
+        .swap-arrow {
+            width: 40px; height: 40px; background: #1e2a4a; border: 2px solid #2d325a;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            margin: -10px auto; position: relative; z-index: 2; cursor: pointer; color: #f0b90b; font-size: 18px;
+        }
+        .swap-btn {
+            width: 100%; padding: 14px; border: none; border-radius: 16px;
+            font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s;
+            background: #f0b90b; color: #0b0f1a;
+        }
+        .swap-btn:disabled { background: #2d325a; color: #666; cursor: not-allowed; }
+        .price-info { font-size: 13px; color: #888; text-align: center; margin-top: 12px; }
+        .slippage { display: flex; justify-content: flex-end; margin-bottom: 10px; font-size: 12px; color: #888; }
+
+        .lp-input-row { margin-bottom: 10px; }
+        .lp-label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .lp-label-row .lp-label {
+            margin-bottom: 0;
+            color: #888;
+            font-size: 12px;
+        }
+        .lp-label-row .balance-row {
+            text-align: right;
+            padding: 0;
+            margin-bottom: 0;
+        }
+        .price-row {
+            display: flex; align-items: center; background: #0d1125; border: 1px solid #2d325a;
+            border-radius: 12px; padding: 0 0 0 14px;
+        }
+        .price-row input {
+            flex: 1; background: transparent; border: none; color: #fff; font-size: 14px;
+            padding: 10px 0; outline: none; min-width: 0;
+        }
+        .price-calc {
+            color: #4ecca3; font-size: 13px; font-weight: 500; white-space: nowrap;
+            padding: 10px 14px; border-left: 1px solid #2d325a;
+            flex-shrink: 0;
+        }
+        .hide { display: none !important; }
+
+        .recent-trade-card { margin-top: 0; }
+        .trade-record-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .trade-record-title { font-size: 16px; font-weight: bold; color: #f0b90b; }
+        .trade-record-time { font-size: 12px; color: #888; }
+        .trade-record-content { display: flex; flex-direction: column; gap: 8px; }
+        .trade-record-row { display: flex; justify-content: space-between; font-size: 14px; }
+        .trade-record-label { color: #888; }
+        .trade-record-value { color: #ccd6f0; }
+        .tx-hash { color: #4ecca3; font-size: 12px; text-decoration: none; word-break: break-all; }
+        .tx-hash:hover { text-decoration: underline; }
+        .no-record { text-align: center; color: #888; font-size: 14px; padding: 10px 0; }
+
+        .lp-trade-card {
+            margin-top: 12px;
+            display: none;
+        }
+        .lp-trade-card .trade-record-header {
+            margin-bottom: 8px;
+        }
+        .lp-trade-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .lp-trade-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 12px;
+        }
+        .lp-trade-item:last-child { border-bottom: none; }
+        .lp-trade-action { color: #4ecca3; }
+        .lp-trade-amount { color: #ccd6f0; }
+    </style>
+
+    <div class="glass-card">
+        <div class="dex-switch">
+            <button class="dex-btn active" id="pancakeBtn" onclick="switchDEX('pancake')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="20" height="20" style="vertical-align: middle;">
+                    <circle cx="50" cy="50" r="50" fill="#3BE0EF"/>
+                    <path d="M 32 30 C 32 15, 46 15, 46 30 C 46 35, 42 42, 42 42 C 48 45, 52 45, 58 42 C 58 35, 54 30, 54 30 C 54 15, 68 15, 68 30 C 68 40, 64 45, 64 45 C 76 48, 76 75, 50 80 C 24 75, 24 48, 36 45 C 36 45, 32 40, 32 30 Z" fill="#B26C48" stroke="#3E1E10" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+                    <path d="M 32 70 C 38 78, 62 78, 68 70 C 60 74, 40 74, 32 70 Z" fill="#F6D68A"/>
+                    <ellipse cx="43" cy="58" rx="2.5" ry="4" fill="#3E1E10"/>
+                    <ellipse cx="57" cy="58" rx="2.5" ry="4" fill="#3E1E10"/>
+                </svg>
+                PancakeSwap (博饼)
+            </button>
+            <button class="dex-btn" id="uniBtn" onclick="switchDEX('uni')">🦄 Uniswap</button>
+        </div>
+        <div class="dex-slogan">一键快输加流动性底池 · 省时省力，平台只是工具不涉及任何资产安全。</div>
+
+        <div class="swap-title">
+            <span id="tabSwap" class="tab-link active" onclick="showSwapView()">兑换</span>
+            <span id="tabLP" class="tab-link" onclick="showLPView()">添加LP</span>
+        </div>
+
+        <div id="swapView">
+            <div class="search-wrapper">
+                <input type="text" class="token-search" id="tokenSearch" placeholder="输入代币名称或合约地址，搜索">
+                <button class="search-icon" id="searchIconBtn" title="搜索">🔍</button>
+            </div>
+            <div class="balance-row">余额: <span id="inputBalance">0.00</span> <span class="max-btn" id="inputMaxBtn">全部</span></div>
+            <div class="input-row">
+                <input type="number" id="inputAmount" placeholder="0.0" step="any">
+                <button class="token-select" id="inputTokenBtn">USDT ▼</button>
+            </div>
+            <div class="swap-arrow" onclick="swapTokens()">↓</div>
+            <div class="balance-row">余额: <span id="outputBalance">0.00</span></div>
+            <div class="input-row">
+                <input type="number" id="outputAmount" placeholder="0.0" readonly>
+                <button class="token-select" id="outputTokenBtn">BNB ▼</button>
+            </div>
+            <div class="slippage">滑点容忍度: 0.5%</div>
+            <button id="swapButton" class="swap-btn" onclick="executeSwap()">连接钱包</button>
+            <div class="price-info" id="rateInfo">--</div>
+        </div>
+
+        <div id="lpView" class="hide">
+            <div class="search-wrapper">
+                <input type="text" class="token-search" id="lpContractSearch" placeholder="输入代币合约地址搜索">
+                <button class="search-icon" id="lpSearchBtn" title="搜索">🔍</button>
+            </div>
+            <div class="lp-input-row">
+                <div class="lp-label-row">
+                    <span class="lp-label">当前价格 (1 USDT = ? TOKEN)</span>
+                    <span style="color:#4ecca3; font-size:13px; font-weight:500;" id="lpCalcDisplay">1 USDT = -- TOKEN</span>
+                </div>
+                <div class="price-row">
+                    <input type="number" id="lpTokenPrice" placeholder="" step="any">
+                    <!-- 移除原来的 price-calc -->
+                </div>
+            </div>
+            <div class="lp-input-row">
+                <div class="lp-label-row">
+                    <span class="lp-label" id="lpLabelFirst">USDT 数量</span>
+                    <span class="balance-row">余额: <span id="lpBalanceFirst">0.00</span></span>
+                </div>
+                <div class="input-row">
+                    <input type="number" id="lpAmountFirst" placeholder="0.0" step="any">
+                    <button class="token-select" id="lpTokenBtnFirst">USDT</button>
+                </div>
+            </div>
+            <div class="swap-arrow" onclick="swapLiquidityTokens()">↓</div>
+            <div class="lp-input-row">
+                <div class="lp-label-row">
+                    <span class="lp-label" id="lpLabelSecond">代币数量</span>
+                    <span class="balance-row">余额: <span id="lpBalanceSecond">0.00</span></span>
+                </div>
+                <div class="input-row">
+                    <div class="input-with-plus">
+                        <span>+</span>
+                        <input type="number" id="lpAmountSecond" placeholder="0.0" step="any">
+                    </div>
+                    <button class="token-select" id="lpTokenBtnSecond">TOKEN</button>
+                </div>
+            </div>
+            <div class="slippage" style="margin-top: 2px;">滑点容忍度: 0.5%</div>
+            <button class="swap-btn" id="lpAddBtn" onclick="addLiquidity()">添加 PancakeSwap V2 LP</button>
+
+            <div class="glass-card lp-trade-card" id="lpTradeCard">
+                <div class="trade-record-header">
+                    <span class="trade-record-title">📋 最近10笔交易</span>
+                </div>
+                <div class="lp-trade-list" id="lpTradeList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass-card recent-trade-card" id="recentTradeCard">
+        <div class="trade-record-header">
+            <span class="trade-record-title">📋 最近交易</span>
+            <span class="trade-record-time" id="tradeTime">--</span>
+        </div>
+        <div class="trade-record-content" id="tradeRecordContent">
+            <div class="no-record">暂无交易记录</div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        var currentDEX = 'pancake';
+        var ROUTERS = {
+            pancake: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
+            uni: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
+        };
+        var FACTORIES = {
+            pancake: '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73',
+            uni: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f'
+        };
+        var WBNBS = {
+            pancake: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+            uni: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+        };
+
+        var TOKEN_ADDRESSES = {
+            'USDT': '0x55d398326f99059fF775485246999027B3197955',
+            'MYK': '0xc23CfEeC6D188D627C85106f682D9eb38d94192a',
+            'BNB': null,
+            'BUSD': '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
+            'WBNB': '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+            'CAKE': '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82',
+            'ETH': '0x2170Ed0880ac9A755fd29B2688956BD959F933F8',
+            'BTCB': '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c'
+        };
+        var ERC20_ABI = [
+            {"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"type":"function"},
+            {"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}],"type":"function"},
+            {"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},
+            {"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"type":"function"},
+            {"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"type":"function"}
+        ];
+        var ROUTER_ABI = [
+            {"constant":false,"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactTokensForTokens","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"type":"function"},
+            {"constant":false,"inputs":[{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactETHForTokens","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"type":"function"},
+            {"constant":false,"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactTokensForETH","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"type":"function"},
+            {"constant":false,"inputs":[{"internalType":"address","name":"tokenA","type":"address"},{"internalType":"address","name":"tokenB","type":"address"},{"internalType":"uint256","name":"amountADesired","type":"uint256"},{"internalType":"uint256","name":"amountBDesired","type":"uint256"},{"internalType":"uint256","name":"amountAMin","type":"uint256"},{"internalType":"uint256","name":"amountBMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"addLiquidity","outputs":[{"internalType":"uint256","name":"amountA","type":"uint256"},{"internalType":"uint256","name":"amountB","type":"uint256"},{"internalType":"uint256","name":"liquidity","type":"uint256"}],"type":"function"},
+            {"constant":true,"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"}],"name":"getAmountsOut","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"type":"function"}
+        ];
+        var FACTORY_ABI = [{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"address"}],"name":"getPair","outputs":[{"name":"","type":"address"}],"type":"function"}];
+
+        var currentInputToken = 'USDT';
+        var currentOutputToken = 'BNB';
+        var ROUTER = ROUTERS[currentDEX];
+        var FACTORY = FACTORIES[currentDEX];
+        var WBNB = WBNBS[currentDEX];
+        var MAX_UINT256 = '115792089237316195423570985008687907853269984665640564039457584007913129639935';
+
+        var lpTokenAddress = null;
+        var lpTokenSymbol = 'TOKEN';
+
+        var PCS_SUBGRAPH = 'https://api.thegraph.com/subgraphs/name/pancakeswap/exchange-v2';
+
+        function $(id) { return document.getElementById(id); }
+        function n(w) { return parseFloat(web3.utils.fromWei(w, 'ether')); }
+
+        function updateLPButton() {
+            var btn = $('lpAddBtn');
+            if (btn) {
+                btn.textContent = '添加 ' + (currentDEX === 'pancake' ? 'PancakeSwap' : 'Uniswap') + ' V2 LP';
+            }
+        }
+
+        // 更新标签右侧计算器显示
+        function updateCalcDisplay(usdtAmount) {
+            var rate = parseFloat($('lpTokenPrice').value);
+            var display = $('lpCalcDisplay');
+            if (!display) return;
+            if (isNaN(rate) || rate <= 0) {
+                display.textContent = '1 USDT = -- ' + lpTokenSymbol;
+                return;
+            }
+            if (usdtAmount !== undefined && !isNaN(usdtAmount) && usdtAmount >= 0) {
+                var tokenAmt = usdtAmount * rate;
+                display.textContent = usdtAmount + ' USDT = ' + tokenAmt.toFixed(6) + ' ' + lpTokenSymbol;
+            } else {
+                display.textContent = '1 USDT = ' + rate.toFixed(6) + ' ' + lpTokenSymbol;
+            }
+        }
+
+        window.showSwapView = function() {
+            document.getElementById('swapView').classList.remove('hide');
+            document.getElementById('lpView').classList.add('hide');
+            document.getElementById('tabSwap').classList.add('active');
+            document.getElementById('tabLP').classList.remove('active');
+            updateBalances();
+            updateRate();
+        };
+        window.showLPView = function() {
+            document.getElementById('swapView').classList.add('hide');
+            document.getElementById('lpView').classList.remove('hide');
+            document.getElementById('tabSwap').classList.remove('active');
+            document.getElementById('tabLP').classList.add('active');
+            updateLPButton();
+            updateLPBalances();
+            updateCalcDisplay();
+        };
+
+        window.switchDEX = function(dex) {
+            currentDEX = dex;
+            ROUTER = ROUTERS[dex];
+            FACTORY = FACTORIES[dex];
+            WBNB = WBNBS[dex];
+            document.getElementById('pancakeBtn').classList.toggle('active', dex === 'pancake');
+            document.getElementById('uniBtn').classList.toggle('active', dex === 'uni');
+            updateLPButton();
+            var tradeCard = $('lpTradeCard');
+            if (tradeCard) tradeCard.style.display = 'none';
+            if (!document.getElementById('swapView').classList.contains('hide')) {
+                updateBalances();
+                updateRate();
+            }
+            parent.showToast('已切换到 ' + (dex === 'pancake' ? 'PancakeSwap' : 'Uniswap'), 'success');
+        };
+
+        async function getDecimals(tokenSymbol) {
+            if (tokenSymbol === 'BNB') return 18;
+            var addr = TOKEN_ADDRESSES[tokenSymbol];
+            if (!addr) return 18;
+            var contract = new web3.eth.Contract(ERC20_ABI, addr);
+            return await contract.methods.decimals().call();
+        }
+
+        async function getTokenBalanceBySymbol(symbol) {
+            if (!window.web3 || !window.currentAccount) return 0;
+            if (symbol === 'BNB') {
+                var balWei = await web3.eth.getBalance(window.currentAccount);
+                return n(balWei);
+            }
+            var addr = TOKEN_ADDRESSES[symbol];
+            if (!addr) return 0;
+            var contract = new web3.eth.Contract(ERC20_ABI, addr);
+            var decimals = await contract.methods.decimals().call();
+            var bal = await contract.methods.balanceOf(window.currentAccount).call();
+            return parseFloat(web3.utils.fromWei(bal, 'ether')) / Math.pow(10, 18 - decimals);
+        }
+
+        async function getBalance(tokenSymbol) {
+            return getTokenBalanceBySymbol(tokenSymbol);
+        }
+
+        async function buildPath(inputSymbol, outputSymbol) {
+            var inputAddr = (inputSymbol === 'BNB') ? WBNB : TOKEN_ADDRESSES[inputSymbol];
+            var outputAddr = (outputSymbol === 'BNB') ? WBNB : TOKEN_ADDRESSES[outputSymbol];
+            if (!inputAddr || !outputAddr) return null;
+            if (inputAddr === outputAddr) return [inputAddr];
+            try {
+                var routerContract = new web3.eth.Contract(ROUTER_ABI, ROUTER);
+                await routerContract.methods.getAmountsOut(web3.utils.toWei('1', 'ether'), [inputAddr, outputAddr]).call();
+                return [inputAddr, outputAddr];
+            } catch (e) {
+                try {
+                    await routerContract.methods.getAmountsOut(web3.utils.toWei('1', 'ether'), [inputAddr, WBNB, outputAddr]).call();
+                    return [inputAddr, WBNB, outputAddr];
+                } catch (e2) {
+                    var usdtAddr = TOKEN_ADDRESSES['USDT'];
+                    try {
+                        await routerContract.methods.getAmountsOut(web3.utils.toWei('1', 'ether'), [inputAddr, usdtAddr, outputAddr]).call();
+                        return [inputAddr, usdtAddr, outputAddr];
+                    } catch (e3) { return null; }
+                }
+            }
+        }
+
+        async function fetchSpotPrice() {
+            if (!web3) return 0;
+            try {
+                var path = await buildPath(currentInputToken, currentOutputToken);
+                if (!path) return 0;
+                var routerContract = new web3.eth.Contract(ROUTER_ABI, ROUTER);
+                var decimals = await getDecimals(currentInputToken);
+                var oneUnit = web3.utils.toWei('1', 'ether');
+                if (decimals !== 18) oneUnit = BigInt(10 ** decimals).toString();
+                var amounts = await routerContract.methods.getAmountsOut(oneUnit, path).call();
+                var outputDecimals = await getDecimals(currentOutputToken);
+                var rawOut = amounts[amounts.length-1];
+                return parseFloat(web3.utils.fromWei(rawOut, 'ether')) / Math.pow(10, 18 - outputDecimals);
+            } catch (e) { return 0; }
+        }
+
+        async function updateBalances() {
+            var inputBal = await getBalance(currentInputToken);
+            var outputBal = await getBalance(currentOutputToken);
+            $('inputBalance').textContent = inputBal.toFixed(4);
+            $('outputBalance').textContent = outputBal.toFixed(4);
+        }
+
+        async function updateRate() {
+            var price = await fetchSpotPrice();
+            if (price > 0) {
+                $('rateInfo').textContent = '1 ' + currentInputToken + ' ≈ ' + price.toFixed(6) + ' ' + currentOutputToken;
+            } else {
+                $('rateInfo').textContent = '无法获取价格';
+            }
+            var inputAmt = parseFloat($('inputAmount').value) || 0;
+            if (inputAmt > 0 && price > 0) {
+                $('outputAmount').value = (inputAmt * price * 0.995).toFixed(6);
+            } else {
+                $('outputAmount').value = '0.0';
+            }
+            var btn = $('swapButton');
+            if (!window.currentAccount) {
+                btn.textContent = '连接钱包';
+                btn.disabled = true;
+            } else if (inputAmt <= 0) {
+                btn.textContent = '输入金额';
+                btn.disabled = true;
+            } else {
+                btn.textContent = '兑换';
+                btn.disabled = false;
+            }
+        }
+
+        async function searchToken() {
+            var searchInput = $('tokenSearch');
+            var query = searchInput.value.trim();
+            if (!query) return;
+            if (!web3) { parent.showToast('钱包未连接', 'error'); return; }
+            var tokenAddress = null;
+            var upperQuery = query.toUpperCase();
+            if (TOKEN_ADDRESSES[upperQuery] !== undefined) {
+                tokenAddress = TOKEN_ADDRESSES[upperQuery];
+                if (tokenAddress === null) tokenAddress = WBNB;
+            } else if (/^0x[a-fA-F0-9]{40}$/.test(query)) {
+                tokenAddress = query;
+            } else { parent.showToast('无效的合约地址', 'error'); return; }
+            try {
+                var tokenContract = new web3.eth.Contract(ERC20_ABI, tokenAddress);
+                var symbol = await tokenContract.methods.symbol().call();
+                var factoryContract = new web3.eth.Contract(FACTORY_ABI, FACTORY);
+                var pair = await factoryContract.methods.getPair(tokenAddress, WBNB).call();
+                if (pair !== '0x0000000000000000000000000000000000000000') {
+                    TOKEN_ADDRESSES[symbol] = tokenAddress;
+                    currentInputToken = symbol;
+                    currentOutputToken = 'BNB';
+                } else {
+                    var usdtAddr = TOKEN_ADDRESSES['USDT'];
+                    pair = await factoryContract.methods.getPair(tokenAddress, usdtAddr).call();
+                    if (pair !== '0x0000000000000000000000000000000000000000') {
+                        TOKEN_ADDRESSES[symbol] = tokenAddress;
+                        currentInputToken = symbol;
+                        currentOutputToken = 'USDT';
+                    } else { parent.showToast('未找到该代币的交易对 (BNB/USDT)', 'error'); return; }
+                }
+                $('inputTokenBtn').textContent = currentInputToken + ' ▼';
+                $('outputTokenBtn').textContent = currentOutputToken + ' ▼';
+                $('inputAmount').value = '';
+                $('outputAmount').value = '0.0';
+                updateBalances();
+                updateRate();
+                searchInput.value = '';
+                parent.showToast('已加载 ' + currentInputToken + '/' + currentOutputToken + ' 交易对', 'success');
+            } catch (e) { console.error(e); parent.showToast('代币信息获取失败，请检查地址', 'error'); }
+        }
+
+        $('tokenSearch').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); searchToken(); } });
+        $('searchIconBtn').addEventListener('click', searchToken);
+        $('inputMaxBtn').addEventListener('click', function() {
+            var bal = parseFloat($('inputBalance').textContent) || 0;
+            if (bal > 0) { $('inputAmount').value = bal; updateRate(); }
+        });
+
+        window.swapTokens = function() {
+            var temp = currentInputToken;
+            currentInputToken = currentOutputToken;
+            currentOutputToken = temp;
+            $('inputTokenBtn').textContent = currentInputToken + ' ▼';
+            $('outputTokenBtn').textContent = currentOutputToken + ' ▼';
+            $('inputAmount').value = '';
+            $('outputAmount').value = '0.0';
+            updateBalances();
+            updateRate();
+        };
+
+        // 上下交换输入框（不改变价格）
+        window.swapLiquidityTokens = function() {
+            var firstAmt = $('lpAmountFirst').value;
+            var secondAmt = $('lpAmountSecond').value;
+            $('lpAmountFirst').value = secondAmt;
+            $('lpAmountSecond').value = firstAmt;
+
+            var firstBal = $('lpBalanceFirst').textContent;
+            var secondBal = $('lpBalanceSecond').textContent;
+            $('lpBalanceFirst').textContent = secondBal;
+            $('lpBalanceSecond').textContent = firstBal;
+
+            var firstLabel = $('lpLabelFirst').textContent;
+            var secondLabel = $('lpLabelSecond').textContent;
+            $('lpLabelFirst').textContent = secondLabel;
+            $('lpLabelSecond').textContent = firstLabel;
+
+            var firstBtn = $('lpTokenBtnFirst').textContent;
+            var secondBtn = $('lpTokenBtnSecond').textContent;
+            $('lpTokenBtnFirst').textContent = secondBtn;
+            $('lpTokenBtnSecond').textContent = firstBtn;
+
+            // 更新计算器显示
+            updateCalcDisplay(parseFloat($('lpAmountFirst').value));
+        };
+
+        function saveTradeRecord(record) {
+            try {
+                var records = JSON.parse(localStorage.getItem('potato_recent_trades') || '[]');
+                records.unshift(record);
+                if (records.length > 5) records = records.slice(0, 5);
+                localStorage.setItem('potato_recent_trades', JSON.stringify(records));
+            } catch (e) {}
+        }
+
+        function getLatestTradeRecord() {
+            try {
+                var records = JSON.parse(localStorage.getItem('potato_recent_trades') || '[]');
+                return records.length > 0 ? records[0] : null;
+            } catch (e) { return null; }
+        }
+
+        function renderRecentTrade() {
+            var record = getLatestTradeRecord();
+            var card = $('recentTradeCard');
+            var content = $('tradeRecordContent');
+            var timeEl = $('tradeTime');
+            if (!record) {
+                if (card) card.style.display = 'block';
+                if (timeEl) timeEl.textContent = '--';
+                if (content) content.innerHTML = '<div class="no-record">暂无交易记录</div>';
+                return;
+            }
+            if (card) card.style.display = 'block';
+            if (timeEl) timeEl.textContent = record.time;
+            if (content) {
+                var txHashDisplay = record.txHash ? 
+                    '<div class="trade-record-row"><span class="trade-record-label">交易哈希</span><a class="tx-hash" href="https://bscscan.com/tx/' + record.txHash + '" target="_blank">' + record.txHash.substring(0, 10) + '...' + record.txHash.substring(record.txHash.length - 8) + '</a></div>' : '';
+                content.innerHTML = 
+                    '<div class="trade-record-row"><span class="trade-record-label">交易对</span><span class="trade-record-value">' + record.inputToken + ' → ' + record.outputToken + '</span></div>' +
+                    '<div class="trade-record-row"><span class="trade-record-label">输入</span><span class="trade-record-value">' + record.inputAmount + ' ' + record.inputToken + '</span></div>' +
+                    '<div class="trade-record-row"><span class="trade-record-label">输出</span><span class="trade-record-value">' + record.outputAmount + ' ' + record.outputToken + '</span></div>' +
+                    txHashDisplay;
+            }
+        }
+
+        renderRecentTrade();
+
+        window.executeSwap = async function() {
+            if (!window.currentAccount) {
+                parent.showToast('请先连接钱包', 'error');
+                return;
+            }
+            var amount = $('inputAmount').value;
+            if (!amount || parseFloat(amount) <= 0) {
+                parent.showToast('请输入有效数量', 'error');
+                return;
+            }
+            var btn = $('swapButton');
+            btn.disabled = true;
+            btn.textContent = '检查授权...';
+
+            try {
+                var account = window.currentAccount;
+                var inputDecimals = await getDecimals(currentInputToken);
+                var outputDecimals = await getDecimals(currentOutputToken);
+
+                var amountInWei;
+                if (inputDecimals === 18) {
+                    amountInWei = web3.utils.toWei(amount, 'ether');
+                } else {
+                    amountInWei = BigInt(Math.floor(parseFloat(amount) * (10 ** inputDecimals))).toString();
+                }
+
+                var path = await buildPath(currentInputToken, currentOutputToken);
+                if (!path) {
+                    parent.showToast('无有效兑换路径', 'error');
+                    btn.disabled = false; btn.textContent = '兑换'; return;
+                }
+
+                var price = await fetchSpotPrice();
+                if (price <= 0) {
+                    parent.showToast('无法获取价格', 'error');
+                    btn.disabled = false; btn.textContent = '兑换'; return;
+                }
+                var expectedOut = parseFloat(amount) * price;
+                var amountOutMin = expectedOut * 0.995;
+                var amountOutMinWei;
+                if (outputDecimals === 18) {
+                    amountOutMinWei = web3.utils.toWei(amountOutMin.toFixed(18), 'ether');
+                } else {
+                    amountOutMinWei = BigInt(Math.floor(amountOutMin * (10 ** outputDecimals))).toString();
+                }
+
+                var deadline = Math.floor(Date.now()/1000) + 600;
+                var routerContract = new web3.eth.Contract(ROUTER_ABI, ROUTER);
+                var tx;
+
+                if (currentInputToken === 'BNB') {
+                    btn.textContent = '等待确认...';
+                    tx = await routerContract.methods.swapExactETHForTokens(
+                        amountOutMinWei, path, account, deadline
+                    ).send({ from: account, value: amountInWei });
+                } else {
+                    var tokenAddr = TOKEN_ADDRESSES[currentInputToken];
+                    var tokenContract = new web3.eth.Contract(ERC20_ABI, tokenAddr);
+                    var allowance = await tokenContract.methods.allowance(account, ROUTER).call();
+                    if (BigInt(allowance) < BigInt(amountInWei)) {
+                        btn.textContent = '授权中...';
+                        parent.showToast('需要授权，请确认', 'info');
+                        await tokenContract.methods.approve(ROUTER, MAX_UINT256).send({ from: account });
+                        parent.showToast('授权成功，继续兑换', 'success');
+                        btn.textContent = '正在兑换...';
+                    }
+
+                    if (currentOutputToken === 'BNB') {
+                        tx = await routerContract.methods.swapExactTokensForETH(
+                            amountInWei, amountOutMinWei, path, account, deadline
+                        ).send({ from: account });
+                    } else {
+                        tx = await routerContract.methods.swapExactTokensForTokens(
+                            amountInWei, amountOutMinWei, path, account, deadline
+                        ).send({ from: account });
+                    }
+                }
+
+                var record = {
+                    time: new Date().toLocaleString(),
+                    inputToken: currentInputToken,
+                    outputToken: currentOutputToken,
+                    inputAmount: amount,
+                    outputAmount: expectedOut.toFixed(6),
+                    txHash: tx.transactionHash
+                };
+                saveTradeRecord(record);
+                renderRecentTrade();
+
+                parent.showToast('兑换成功！', 'success');
+                $('inputAmount').value = '';
+                $('outputAmount').value = '0.0';
+                updateBalances();
+            } catch (e) {
+                console.error(e);
+                var msg = e.message || '';
+                if (msg.includes('User denied') || msg.includes('rejected')) {
+                    parent.showToast('交易已取消', 'error');
+                } else if (msg.includes('INSUFFICIENT_OUTPUT_AMOUNT')) {
+                    parent.showToast('价格波动过大，请重试', 'error');
+                } else {
+                    parent.showToast('交易失败: ' + msg.substring(0, 100), 'error');
+                }
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '兑换';
+            }
+        };
+
+        $('inputAmount').addEventListener('input', updateRate);
+        document.addEventListener('walletConnected', function() {
+            updateBalances();
+            updateRate();
+            renderRecentTrade();
+            updateLPBalances();
+        });
+
+        async function updateLPBalances() {
+            var usdtBal = await getTokenBalanceBySymbol('USDT');
+            $('lpBalanceFirst').textContent = usdtBal.toFixed(4);
+            if (lpTokenAddress) {
+                try {
+                    var tokenContract = new web3.eth.Contract(ERC20_ABI, lpTokenAddress);
+                    var decimals = await tokenContract.methods.decimals().call();
+                    var bal = await tokenContract.methods.balanceOf(window.currentAccount).call();
+                    var fmt = parseFloat(web3.utils.fromWei(bal, 'ether')) / Math.pow(10, 18 - decimals);
+                    $('lpBalanceSecond').textContent = fmt.toFixed(4);
+                } catch (e) {
+                    $('lpBalanceSecond').textContent = '0.00';
+                }
+            } else {
+                $('lpBalanceSecond').textContent = '0.00';
+            }
+        }
+
+        function updateLPTokenDisplay(symbol) {
+            lpTokenSymbol = symbol || 'TOKEN';
+            $('lpTokenBtnSecond').textContent = lpTokenSymbol;
+            updateCalcDisplay();
+        }
+
+        async function fetchTokenPriceInUSDT(tokenAddr) {
+            var usdtAddr = TOKEN_ADDRESSES['USDT'];
+            var routerContract = new web3.eth.Contract(ROUTER_ABI, ROUTER);
+            var path = [tokenAddr, usdtAddr];
+            try {
+                var decimals = await new web3.eth.Contract(ERC20_ABI, tokenAddr).methods.decimals().call();
+                var oneUnit = decimals === 18 ? web3.utils.toWei('1', 'ether') : BigInt(10 ** decimals).toString();
+                var amounts = await routerContract.methods.getAmountsOut(oneUnit, path).call();
+                return parseFloat(web3.utils.fromWei(amounts[1], 'ether'));
+            } catch (e) {
+                path = [tokenAddr, WBNB, usdtAddr];
+                try {
+                    var decimals2 = await new web3.eth.Contract(ERC20_ABI, tokenAddr).methods.decimals().call();
+                    var oneUnit2 = decimals2 === 18 ? web3.utils.toWei('1', 'ether') : BigInt(10 ** decimals2).toString();
+                    var amounts2 = await routerContract.methods.getAmountsOut(oneUnit2, path).call();
+                    return parseFloat(web3.utils.fromWei(amounts2[2], 'ether'));
+                } catch (e2) { return 0; }
+            }
+        }
+
+        async function fetchPairSwaps(pairAddress, tokenSymbol) {
+            var query = `{
+                swaps(first: 10, orderBy: timestamp, orderDirection: desc, where: { pair: "${pairAddress.toLowerCase()}" }) {
+                    transaction { id }
+                    amount0In
+                    amount1In
+                    amount0Out
+                    amount1Out
+                    timestamp
+                }
+            }`;
+            try {
+                var response = await fetch(PCS_SUBGRAPH, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                });
+                var data = await response.json();
+                if (data.errors) throw new Error(data.errors[0].message);
+                renderPairSwaps(data.data.swaps, tokenSymbol);
+            } catch (e) {
+                console.error('获取交易记录失败:', e);
+                $('lpTradeCard').style.display = 'none';
+            }
+        }
+
+        function renderPairSwaps(swaps, tokenSymbol) {
+            var container = $('lpTradeList');
+            if (!container) return;
+            if (!swaps || swaps.length === 0) {
+                $('lpTradeCard').style.display = 'none';
+                return;
+            }
+            var html = '';
+            for (var i = 0; i < swaps.length; i++) {
+                var s = swaps[i];
+                var amountUSDT = parseFloat(web3.utils.fromWei(s.amount0In, 'ether')) || parseFloat(web3.utils.fromWei(s.amount1In, 'ether'));
+                var amountToken = parseFloat(web3.utils.fromWei(s.amount0Out, 'ether')) || parseFloat(web3.utils.fromWei(s.amount1Out, 'ether'));
+                var time = new Date(s.timestamp * 1000).toLocaleString();
+                html += '<div class="lp-trade-item">' +
+                            '<span class="lp-trade-action">' + (amountToken > 0 ? '买入 ' + tokenSymbol : '卖出 ' + tokenSymbol) + '</span>' +
+                            '<span class="lp-trade-amount">' + (amountUSDT > 0 ? amountUSDT.toFixed(4) + ' USDT' : amountToken.toFixed(4) + ' ' + tokenSymbol) + '</span>' +
+                            '<span style="color:#888;font-size:11px;">' + time + '</span>' +
+                        '</div>';
+            }
+            container.innerHTML = html;
+            $('lpTradeCard').style.display = 'block';
+        }
+
+        function isCorrectNetwork() {
+            return window.ethereum && window.ethereum.request({ method: 'eth_chainId' }).then(function(chainId) {
+                var expected = currentDEX === 'pancake' ? '0x38' : '0x1';
+                return chainId === expected;
+            }).catch(function() { return false; });
+        }
+
+        $('lpSearchBtn').addEventListener('click', async function() {
+            var addr = $('lpContractSearch').value.trim();
+            if (!web3 || !addr) return;
+            if (!/^0x[a-fA-F0-9]{40}$/.test(addr)) {
+                parent.showToast('无效的合约地址', 'error');
+                return;
+            }
+            var tradeCard = $('lpTradeCard');
+            if (tradeCard) tradeCard.style.display = 'none';
+
+            try {
+                var correctNet = await isCorrectNetwork();
+                if (!correctNet) {
+                    parent.showToast('当前网络与所选DEX不匹配，请切换网络', 'error');
+                    return;
+                }
+
+                var contract = new web3.eth.Contract(ERC20_ABI, addr);
+                var symbol = await contract.methods.symbol().call();
+                var factoryContract = new web3.eth.Contract(FACTORY_ABI, FACTORY);
+                var usdtAddr = TOKEN_ADDRESSES['USDT'];
+                var pair = await factoryContract.methods.getPair(addr, usdtAddr).call();
+                if (pair !== '0x0000000000000000000000000000000000000000') {
+                    lpTokenAddress = addr;
+                    updateLPTokenDisplay(symbol);
+                    parent.showToast('已找到 ' + symbol + '/USDT 交易对，可添加流动性', 'success');
+
+                    var tokenPrice = await fetchTokenPriceInUSDT(addr);
+                    if (tokenPrice > 0) {
+                        var rate = 1 / tokenPrice;
+                        $('lpTokenPrice').value = rate.toFixed(6);
+                        updateCalcDisplay();
+                        var ev = new Event('input', { bubbles: true });
+                        $('lpTokenPrice').dispatchEvent(ev);
+                    }
+                    fetchPairSwaps(pair, symbol);
+                } else {
+                    lpTokenAddress = addr;
+                    updateLPTokenDisplay(symbol);
+                    parent.showToast('未找到与 USDT 的交易对，仍可尝试创建', 'info');
+                    var tokenPrice2 = await fetchTokenPriceInUSDT(addr);
+                    if (tokenPrice2 > 0) {
+                        var rate2 = 1 / tokenPrice2;
+                        $('lpTokenPrice').value = rate2.toFixed(6);
+                        updateCalcDisplay();
+                        $('lpTokenPrice').dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    var pair2 = await factoryContract.methods.getPair(addr, WBNB).call();
+                    if (pair2 !== '0x0000000000000000000000000000000000000000') {
+                        fetchPairSwaps(pair2, symbol);
+                    }
+                }
+                $('lpContractSearch').value = symbol;
+                updateLPBalances();
+            } catch (e) {
+                console.error(e);
+                parent.showToast('获取代币信息失败', 'error');
+                $('lpTradeCard').style.display = 'none';
+            }
+        });
+
+        // 价格输入监听
+        $('lpTokenPrice').addEventListener('input', function() {
+            var rate = parseFloat(this.value);
+            if (!isNaN(rate) && rate > 0) {
+                var usdtAmt = parseFloat($('lpAmountFirst').value) || 0;
+                $('lpAmountSecond').value = (usdtAmt * rate).toFixed(6);
+                updateCalcDisplay(usdtAmt);
+            } else {
+                $('lpAmountSecond').value = '';
+                updateCalcDisplay(undefined);
+            }
+        });
+
+        $('lpAmountFirst').addEventListener('input', function() {
+            var usdtAmt = parseFloat(this.value);
+            var rate = parseFloat($('lpTokenPrice').value);
+            if (!isNaN(usdtAmt) && !isNaN(rate) && rate > 0) {
+                $('lpAmountSecond').value = (usdtAmt * rate).toFixed(6);
+                updateCalcDisplay(usdtAmt);
+            } else {
+                $('lpAmountSecond').value = '';
+                updateCalcDisplay(usdtAmt);
+            }
+        });
+
+        $('lpAmountSecond').addEventListener('input', function() {
+            var tokenAmt = parseFloat(this.value);
+            var rate = parseFloat($('lpTokenPrice').value);
+            if (!isNaN(tokenAmt) && !isNaN(rate) && rate > 0) {
+                var usdt = (tokenAmt / rate).toFixed(6);
+                $('lpAmountFirst').value = usdt;
+                updateCalcDisplay(parseFloat(usdt));
+            }
+        });
+
+        window.addLiquidity = function() {
+            var rate = parseFloat($('lpTokenPrice').value);
+            var usdt = $('lpAmountFirst').value;
+            var tokenAmt = $('lpAmountSecond').value;
+            if (!lpTokenAddress) {
+                parent.showToast('请先搜索并加载代币合约', 'error');
+                return;
+            }
+            if (!rate || !usdt) {
+                parent.showToast('请输入价格和USDT数量', 'error');
+                return;
+            }
+            parent.showToast(
+                '正在通过 ' + (currentDEX === 'pancake' ? 'PancakeSwap' : 'Uniswap') +
+                ' 添加流动性\nRouter: ' + ROUTER.substring(0, 10) + '...' +
+                '\n(链上交易开发中，当前为演示)',
+                'info'
+            );
+        };
+
+        updateLPButton();
+        showSwapView();
+        if (window.web3 && window.currentAccount) {
+            updateBalances();
+            updateRate();
+        } else {
+            setTimeout(function() {
+                if (window.web3 && window.currentAccount) {
+                    updateBalances();
+                    updateRate();
+                }
+            }, 500);
+        }
+    })();
+    </script>
+</div>
