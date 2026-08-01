@@ -1,769 +1,337 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Crypto P2P UI Clone</title>
-<style>
-  :root {
-    --bg-color: #141821;
-    --card-bg: #1b212d;
-    --card-alt: #222936;
-    --text-primary: #ffffff;
-    --text-secondary: #8e98b0;
-    --text-tertiary: #b7bdc9;
-    --color-green: #00c087;
-    --color-red: #f6465d; /* 新增红色 */
-    --color-yellow: #f8d549;
-    --border-color: #2c3442;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-
-  body {
-    background-color: #0e121b;
-    display: flex;
-    justify-content: center;
-    color: var(--text-primary);
-  }
-
-  .app-container {
-    width: 100%;
-    max-width: 420px;
-    background-color: var(--bg-color);
-    min-height: 100vh;
-    padding: 12px 16px 20px;
-    position: relative;
-  }
-
-  .header {
-    position: relative;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 16px;
-    font-size: 18px;
-    font-weight: 500;
-  }
-  .header-left, .header-right { display: flex; align-items: center; gap: 12px; }
-  
-  .header-title {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    white-space: nowrap;
-    z-index: 1;
-  }
-  
-  .header-title .nav-item {
-    color: var(--text-secondary);
-    font-weight: 500;
-    transition: color 0.2s;
-  }
-  .header-title .nav-item.active {
-    color: var(--text-primary);
-    font-weight: 600;
-  }
-
-  .action-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 16px;
-  }
-  .toggle-group {
-    display: flex;
-    background: var(--card-bg);
-    border-radius: 20px;
-    padding: 3px;
-    cursor: pointer;
-  }
-  .toggle-btn {
-    padding: 8px 20px;
-    border: none;
-    border-radius: 18px;
-    background: transparent;
-    color: var(--text-secondary);
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .toggle-btn.active {
-    background: #ffffff;
-    color: #000000;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  }
-
-  /* CNY 下拉菜单 */
-  .currency-wrapper {
-    position: relative;
-    margin-left: auto;
-  }
-  .currency-btn {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 4px 12px;
-    border-radius: 16px;
-    font-size: 14px;
-    cursor: pointer;
-    min-width: 70px;
-    text-align: center;
-  }
-  .currency-dropdown {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 4px 0;
-    min-width: 100%;
-    list-style: none;
-    display: none;
-    z-index: 100;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    overflow: hidden;
-  }
-  .currency-dropdown.active { display: block; }
-  .currency-dropdown li {
-    padding: 10px 16px;
-    color: var(--text-primary);
-    font-size: 14px;
-    cursor: pointer;
-    text-align: center;
-    transition: background 0.15s;
-  }
-  .currency-dropdown li:hover { background: var(--card-alt); }
-
-  /* 过滤栏 */
-  .filter-bar {
-    display: flex;
-    gap: 12px;
-    padding-bottom: 16px;
-    flex-wrap: nowrap;
-    overflow-x: visible;
-    align-items: center;
-  }
-  .filter-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--text-secondary);
-    font-size: 14px;
-    white-space: nowrap;
-  }
-  .filter-item.active { color: var(--color-green); }
-  
-  /* 支付下拉菜单 */
-  .pay-wrapper {
-    position: relative;
-    cursor: pointer;
-    z-index: 10;
-  }
-  .pay-trigger {
-    color: var(--text-secondary);
-    font-size: 14px;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .pay-dropdown {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 4px 0;
-    min-width: 120px;
-    list-style: none;
-    display: none;
-    z-index: 100;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    overflow: hidden;
-  }
-  .pay-dropdown.active { display: block; }
-  .pay-dropdown li {
-    padding: 10px 16px;
-    color: var(--text-primary);
-    font-size: 14px;
-    cursor: pointer;
-    text-align: left;
-    transition: background 0.15s;
-  }
-  .pay-dropdown li:hover { background: var(--card-alt); }
-
-  .filter-check {
-    display: flex;
-    align-items: center;
-    color: var(--text-secondary);
-    font-size: 14px;
-    margin-left: auto;
-  }
-  .filter-check input { accent-color: var(--color-green); margin-right: 6px; }
-
-  .list-view {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .card {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    position: relative;
-  }
-
-  .card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-  .seller-name {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 500;
-    font-size: 15px;
-    flex-wrap: wrap;
-  }
-  .tags { display: flex; gap: 4px; }
-  .tag {
-    background: var(--card-alt);
-    color: #c5cbd6;
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 10px;
-  }
-  .tag.gold { background: #333026; color: var(--color-yellow); }
-  
-  .order-stats {
-    font-size: 12px;
-    color: var(--text-secondary);
-  }
-
-  .price-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 2px;
-  }
-  .price-left {
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-  }
-  .price { font-size: 26px; font-weight: 600; color: var(--text-primary); }
-  .unit { font-size: 14px; color: var(--text-secondary); }
-
-  .price-right-pay {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    font-size: 14px;
-    color: var(--text-primary);
-  }
-
-  .limit-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    position: relative;
-  }
-  .limit-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex: 1;
-  }
-  .limit-text { font-size: 12px; color: var(--text-secondary); }
-  .limit-text span { color: var(--text-primary); }
-  
-  .meta-info {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-    margin-left: 12px;
-    justify-content: flex-start;
-  }
-  .time-limit {
-    font-size: 11px;
-    color: var(--text-secondary);
-    margin-top: 0px; 
-  }
-
-  .action-row {
-    position: absolute;
-    right: 0px;
-    bottom: 0px;
-    display: flex;
-    justify-content: flex-end;
-  }
-  
-  /* 买入按钮样式 */
-  .buy-btn {
-    background-color: var(--color-green);
-    color: #ffffff;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 28px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-  }
-
-  /* 卖出按钮样式（新增红色） */
-  .sell-btn {
-    background-color: var(--color-red);
-    color: #ffffff;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 28px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-  }
-
-  .floating-action {
-    position: fixed;
-    right: 20px;
-    bottom: 100px;
-    width: 44px;
-    height: 44px;
-    background: #3a4050;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-  }
-  .floating-action svg { fill: #ffffff; width: 20px; height: 20px; transform: rotate(-45deg); }
-
-  .icon { width: 20px; height: 20px; fill: currentColor; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuckyStamp - 分红提现</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; }
+        .container { max-width: 500px; margin: 0 auto; padding: 20px; }
+        
+        .header { text-align: center; padding: 30px 0; }
+        .header h1 { font-size: 28px; color: #ffd700; }
+        .header p { color: #888; margin-top: 5px; }
+        
+        .card { background: #16213e; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+        .card-title { font-size: 16px; color: #ffd700; margin-bottom: 15px; }
+        
+        .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: #888; }
+        .info-value { color: #fff; font-weight: bold; }
+        
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: all 0.3s; }
+        .btn-primary { background: #ffd700; color: #1a1a2e; }
+        .btn-secondary { background: #0f3460; color: #ffd700; }
+        .btn-danger { background: #e74c3c; color: #fff; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn:hover:not(:disabled) { transform: scale(1.02); }
+        
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; color: #888; margin-bottom: 5px; font-size: 14px; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #333; border-radius: 8px; background: #1a1a2e; color: #fff; font-size: 16px; }
+        .input-group input:focus { outline: none; border-color: #ffd700; }
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 12px; text-align: center; background: #16213e; border-radius: 10px; cursor: pointer; color: #888; font-weight: bold; }
+        .tab.active { background: #ffd700; color: #1a1a2e; }
+        
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 8px; color: #fff; font-weight: bold; z-index: 1000; }
+        .toast-success { background: #27ae60; }
+        .toast-error { background: #e74c3c; }
+        
+        .loading { text-align: center; padding: 20px; color: #888; }
+        .address-list { max-height: 300px; overflow-y: auto; }
+        .address-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #1a1a2e; border-radius: 8px; margin-bottom: 8px; }
+        .address-item .addr { font-size: 12px; color: #888; word-break: break-all; flex: 1; }
+        .address-item .earned { font-size: 12px; color: #ffd700; margin: 0 10px; }
+        .address-item .remove-btn { background: #e74c3c; color: #fff; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    </style>
 </head>
 <body>
-
-<div class="app-container">
-  
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <svg class="icon" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-    </div>
-    <div class="header-title">
-      <span class="nav-item active">OTC交易</span>
-      <span class="nav-item">订单详情</span>
-    </div>
-    <div class="header-right">
-      <svg class="icon" style="color:var(--text-secondary);" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
-    </div>
-  </div>
-
-  <!-- Action Bar -->
-  <div class="action-bar">
-    <div class="toggle-group" id="toggleGroup">
-      <button class="toggle-btn active" data-target="buy">我要买</button>
-      <button class="toggle-btn" data-target="sell">我要卖</button>
-    </div>
-    <div class="currency-wrapper" id="currencyWrapper">
-      <button class="currency-btn" id="currencyBtn">CNY ▾</button>
-      <ul class="currency-dropdown" id="currencyDropdown">
-        <li data-value="欧阳">欧阳</li>
-        <li data-value="美元">美元</li>
-        <li data-value="英镑">英镑</li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- Filter Bar -->
-  <div class="filter-bar">
-    <div class="filter-item active">
-      <span>T</span> USDT ▾
-    </div>
-    <div class="filter-item">金额 ▾</div>
-    
-    <div class="pay-wrapper" id="payWrapper">
-      <div class="pay-trigger" id="payBtn">支付 ▾</div>
-      <ul class="pay-dropdown" id="payDropdown">
-        <li data-value="微信">微信</li>
-        <li data-value="支付宝">支付宝</li>
-        <li data-value="银行借记卡">银行借记卡</li>
-      </ul>
-    </div>
-    
-    <div class="filter-check">
-      <input type="checkbox" checked> 神盾
-    </div>
-    <svg class="icon" style="color:var(--text-secondary); margin-left:8px; width:18px;" viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
-  </div>
-
-  <!-- ================= 我要买 列表 ================= -->
-  <div class="list-view" id="buyList">
-    <!-- Card 1 -->
-    <div class="card">
-      <div class="card-top">
-        <div class="seller-name">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" fill="#00c087" />
-          </svg>
-          遥遥领先-五年老店-安全零冻全球
-          <div class="tags">
-            <span class="tag gold">保证金</span>
-            <span class="tag gold">⭐⭐⭐⭐⭐</span>
-          </div>
-        </div>
-        <svg style="width:32px; height:32px;" viewBox="0 0 24 24" fill="none"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="rgba(114, 106, 255, 0.3)"/></svg>
-      </div>
-      <div class="order-stats">交易: 9860 订单 (100.00%)</div>
-      
-      <div class="price-row">
-        <div class="price-left">
-          <span class="price">¥6.77</span>
-          <span class="unit">/USDT</span>
-        </div>
-        <div class="price-right-pay">
-          <span>支付宝</span>
-          <span style="font-size:18px; margin-left:2px;">ⓘ</span>
-        </div>
-      </div>
-
-      <div class="limit-row">
-        <div class="limit-info">
-          <div class="limit-text">保证金：<span>0.00 USDT</span></div>
-          <div class="limit-text">限额 <span>400 - 799 CNY</span></div>
-          <div class="limit-text">可用 <span>289.93 USDT</span></div>
-        </div>
-        <div class="meta-info">
-          <div class="time-limit">🕒 15 分钟</div>
+    <div class="container">
+        <div class="header">
+            <h1>🍀 LuckyStamp</h1>
+            <p>分红提现面板</p>
         </div>
 
-        <div class="action-row">
-          <button class="buy-btn">买入</button>
+        <div id="wallet-section">
+            <button class="btn btn-primary" id="connect-btn" onclick="connectWallet()">连接钱包</button>
         </div>
-      </div>
+
+        <div id="main-section" style="display:none;">
+            <!-- 余额卡片 -->
+            <div class="card">
+                <div class="card-title">📊 合约余额</div>
+                <div class="info-row"><span class="info-label">USDT余额</span><span class="info-value" id="usdt-balance">0</span></div>
+                <div class="info-row"><span class="info-label">BNB余额</span><span class="info-value" id="bnb-balance">0</span></div>
+                <div class="info-row"><span class="info-label">分红地址数</span><span class="info-value" id="addr-count">0</span></div>
+                <div class="info-row"><span class="info-label">累计分红</span><span class="info-value" id="total-dist">0 USDT</span></div>
+            </div>
+
+            <!-- 操作标签 -->
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('distribute')">💰 分红</div>
+                <div class="tab" onclick="switchTab('withdraw')">💸 提现</div>
+                <div class="tab" onclick="switchTab('manage')">👥 管理</div>
+            </div>
+
+            <!-- 分红面板 -->
+            <div class="card" id="tab-distribute">
+                <div class="card-title">💰 分红分配</div>
+                <div class="info-row"><span class="info-label">每地址预估USDT</span><span class="info-value" id="per-usdt">0</span></div>
+                <div class="info-row"><span class="info-label">每地址预估BNB</span><span class="info-value" id="per-bnb">0</span></div>
+                <button class="btn btn-primary" onclick="distributeUSDT()">🎯 分配USDT</button>
+                <button class="btn btn-secondary" onclick="distributeBNB()">💎 分配BNB</button>
+                <button class="btn btn-primary" onclick="distributeAll()">🚀 一键分配</button>
+            </div>
+
+            <!-- 提现面板 -->
+            <div class="card" id="tab-withdraw" style="display:none;">
+                <div class="card-title">💸 紧急提现 (仅Owner)</div>
+                <div class="input-group">
+                    <label>提现USDT数量</label>
+                    <input type="number" id="withdraw-usdt-amount" placeholder="输入USDT数量" step="0.01">
+                </div>
+                <button class="btn btn-danger" onclick="withdrawUSDT()">提现USDT</button>
+                <div class="input-group" style="margin-top:15px;">
+                    <label>提现BNB数量</label>
+                    <input type="number" id="withdraw-bnb-amount" placeholder="输入BNB数量" step="0.01">
+                </div>
+                <button class="btn btn-danger" onclick="withdrawBNB()">提现BNB</button>
+            </div>
+
+            <!-- 管理面板 -->
+            <div class="card" id="tab-manage" style="display:none;">
+                <div class="card-title">👥 地址管理 (仅Owner)</div>
+                <div class="input-group">
+                    <label>添加单个地址</label>
+                    <input type="text" id="add-address" placeholder="0x...">
+                </div>
+                <button class="btn btn-primary" onclick="addAddress()">➕ 添加地址</button>
+                <div class="input-group" style="margin-top:15px;">
+                    <label>批量添加地址 (逗号分隔)</label>
+                    <input type="text" id="add-addresses" placeholder="0x..., 0x..., 0x...">
+                </div>
+                <button class="btn btn-primary" onclick="addAddresses()">➕ 批量添加</button>
+                <div class="card-title" style="margin-top:20px;">📋 分红地址列表</div>
+                <div class="address-list" id="address-list">加载中...</div>
+            </div>
+        </div>
     </div>
 
-    <!-- Card 2 -->
-    <div class="card">
-      <div class="card-top">
-        <div class="seller-name">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" fill="#00c087" />
-          </svg>
-          神盾严选专区100万单老商家
-          <div class="tags">
-            <span class="tag gold">保证金</span>
-            <span class="tag gold">⭐⭐⭐⭐⭐</span>
-          </div>
-        </div>
-      </div>
-      <div class="order-stats">交易: 41904 订单 (100.00%)</div>
-      
-      <div class="price-row">
-        <div class="price-left">
-          <span class="price">¥6.77</span>
-          <span class="unit">/USDT</span>
-        </div>
-        <div class="price-right-pay">
-          <span>支付宝</span>
-          <span style="font-size:18px; margin-left:2px;">ⓘ</span>
-        </div>
-      </div>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script>
+        // ============ 配置 ============
+        const CONTRACT_ADDRESS = '0xE6275279cDF0Ffa7178F94C54680Ebc8bD60E139';
+        const CONTRACT_ABI = [
+            "function getBalances() external view returns (uint256 usdt, uint256 bnb)",
+            "function getAddressCount() external view returns (uint256)",
+            "function getPerAddressEstimate() external view returns (uint256 usdt, uint256 bnb)",
+            "function getStats() external view returns (uint256 addrCount, uint256 usdtTotal, uint256 bnbTotal, uint256 distCount, uint256 lastDist, uint256 usdtBal, uint256 bnbBal)",
+            "function getAddresses() external view returns (address[])",
+            "function distributeUSDT() external",
+            "function distributeBNB() external",
+            "function distributeAll() external",
+            "function withdrawUSDT(uint256 amount) external",
+            "function withdrawBNB(uint256 amount) external",
+            "function addAddress(address addr) external",
+            "function addAddresses(address[] calldata addrs) external",
+            "function owner() external view returns (address)"
+        ];
 
-      <div class="limit-row">
-        <div class="limit-info">
-          <div class="limit-text">保证金：<span>0.00 USDT</span></div>
-          <div class="limit-text">限额 <span>300 - 799 CNY</span></div>
-          <div class="limit-text">可用 <span>2,627.14 USDT</span></div>
-        </div>
-        <div class="meta-info">
-          <div class="time-limit">🕒 15 分钟</div>
-        </div>
+        let provider, signer, contract, userAddress;
 
-        <div class="action-row">
-          <button class="buy-btn">买入</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 3 -->
-    <div class="card">
-      <div class="card-top">
-        <div class="seller-name">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" fill="#00c087" />
-          </svg>
-          聚优商行-24h
-          <div class="tags">
-            <span class="tag gold">保证金</span>
-            <span class="tag gold">⭐⭐⭐⭐⭐</span>
-          </div>
-        </div>
-      </div>
-      <div class="order-stats">交易: 862 订单 (100.00%)</div>
-      
-      <div class="price-row">
-        <div class="price-left">
-          <span class="price">¥6.77</span>
-          <span class="unit">/USDT</span>
-        </div>
-        <div class="price-right-pay">
-          <span>银行</span>
-          <span style="font-size:18px; margin-left:2px;">ⓘ</span>
-        </div>
-      </div>
-
-      <div class="limit-row">
-        <div class="limit-info">
-          <div class="limit-text">保证金：<span>0.00 USDT</span></div>
-          <div class="limit-text">限额 <span>30,000 - 135,990 CNY</span></div>
-          <div class="limit-text">可用 <span>20,087.27 USDT</span></div>
-        </div>
-
-        <div class="meta-info">
-          <div class="time-limit">🕒 15 分钟</div>
-        </div>
-
-        <div class="action-row">
-          <button class="buy-btn">买入</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= 我要卖 列表（默认隐藏） ================= -->
-  <div class="list-view" id="sellList" style="display:none;">
-    <!-- Card 1 (卖) -->
-    <div class="card">
-      <div class="card-top">
-        <div class="seller-name">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" fill="#00c087" />
-          </svg>
-          遥遥领先-五年老店-安全零冻
-          <div class="tags">
-            <span class="tag gold">保证金</span>
-            <span class="tag gold">⭐⭐⭐⭐⭐</span>
-          </div>
-        </div>
-        <svg style="width:32px; height:32px;" viewBox="0 0 24 24" fill="none"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="rgba(114, 106, 255, 0.3)"/></svg>
-      </div>
-      <div class="order-stats">交易: 9860 订单 (100.00%)</div>
-      
-      <div class="price-row">
-        <div class="price-left">
-          <span class="price">¥6.77</span>
-          <span class="unit">/USDT</span>
-        </div>
-        <div class="price-right-pay">
-          <span>支付宝</span>
-          <span style="font-size:18px; margin-left:2px;">ⓘ</span>
-        </div>
-      </div>
-
-      <div class="limit-row">
-        <div class="limit-info">
-          <div class="limit-text">保证金：<span>0.00 USDT</span></div>
-          <div class="limit-text">限额 <span>400 - 799 CNY</span></div>
-          <div class="limit-text">可用 <span>289.93 USDT</span></div>
-        </div>
-        <div class="meta-info">
-          <div class="time-limit">🕒 15 分钟</div>
-        </div>
-
-        <div class="action-row">
-          <button class="sell-btn">卖出</button> <!-- 红色按钮，名称为卖出 -->
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 2 (卖) -->
-    <div class="card">
-      <div class="card-top">
-        <div class="seller-name">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" fill="#00c087" />
-          </svg>
-          神盾严选专区100万单老商家
-          <div class="tags">
-            <span class="tag gold">保证金</span>
-            <span class="tag gold">⭐⭐⭐⭐⭐</span>
-          </div>
-        </div>
-      </div>
-      <div class="order-stats">交易: 41904 订单 (100.00%)</div>
-      
-      <div class="price-row">
-        <div class="price-left">
-          <span class="price">¥6.77</span>
-          <span class="unit">/USDT</span>
-        </div>
-        <div class="price-right-pay">
-          <span>支付宝</span>
-          <span style="font-size:18px; margin-left:2px;">ⓘ</span>
-        </div>
-      </div>
-
-      <div class="limit-row">
-        <div class="limit-info">
-          <div class="limit-text">保证金：<span>0.00 USDT</span></div>
-          <div class="limit-text">限额 <span>300 - 799 CNY</span></div>
-          <div class="limit-text">可用 <span>2,627.14 USDT</span></div>
-        </div>
-        <div class="meta-info">
-          <div class="time-limit">🕒 15 分钟</div>
-        </div>
-
-        <div class="action-row">
-          <button class="sell-btn">卖出</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 3 (卖) -->
-    <div class="card">
-      <div class="card-top">
-        <div class="seller-name">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" fill="#00c087" />
-          </svg>
-          聚优商行-24h
-          <div class="tags">
-            <span class="tag gold">保证金</span>
-            <span class="tag gold">⭐⭐⭐⭐⭐</span>
-          </div>
-        </div>
-      </div>
-      <div class="order-stats">交易: 862 订单 (100.00%)</div>
-      
-      <div class="price-row">
-        <div class="price-left">
-          <span class="price">¥6.77</span>
-          <span class="unit">/USDT</span>
-        </div>
-        <div class="price-right-pay">
-          <span>银行</span>
-          <span style="font-size:18px; margin-left:2px;">ⓘ</span>
-        </div>
-      </div>
-
-      <div class="limit-row">
-        <div class="limit-info">
-          <div class="limit-text">保证金：<span>0.00 USDT</span></div>
-          <div class="limit-text">限额 <span>30,000 - 135,990 CNY</span></div>
-          <div class="limit-text">可用 <span>20,087.27 USDT</span></div>
-        </div>
-
-        <div class="meta-info">
-          <div class="time-limit">🕒 15 分钟</div>
-        </div>
-
-        <div class="action-row">
-          <button class="sell-btn">卖出</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Floating Button -->
-  <div class="floating-action">
-    <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
-  </div>
-
-</div>
-
-<!-- JS 实现多下拉菜单与 Tab 切换逻辑 -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    
-    // --- 1. CNY 下拉菜单逻辑 ---
-    const currencyWrapper = document.getElementById('currencyWrapper');
-    const currencyBtn = document.getElementById('currencyBtn');
-    const currencyDropdown = document.getElementById('currencyDropdown');
-    const currencyOptions = currencyDropdown.querySelectorAll('li');
-
-    currencyBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      currencyDropdown.classList.toggle('active');
-    });
-
-    currencyOptions.forEach(option => {
-      option.addEventListener('click', function(e) {
-        e.stopPropagation();
-        const selectedValue = this.getAttribute('data-value');
-        currencyBtn.innerHTML = selectedValue + ' ▾';
-        currencyDropdown.classList.remove('active');
-      });
-    });
-
-    // --- 2. 支付下拉菜单逻辑 ---
-    const payWrapper = document.getElementById('payWrapper');
-    const payBtn = document.getElementById('payBtn');
-    const payDropdown = document.getElementById('payDropdown');
-    const payOptions = payDropdown.querySelectorAll('li');
-
-    payBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      payDropdown.classList.toggle('active');
-    });
-
-    payOptions.forEach(option => {
-      option.addEventListener('click', function(e) {
-        e.stopPropagation();
-        const selectedValue = this.getAttribute('data-value');
-        payBtn.innerHTML = selectedValue + ' ▾';
-        payDropdown.classList.remove('active');
-      });
-    });
-
-    // --- 3. 我要买 / 我要卖 切换逻辑 ---
-    const toggleGroup = document.getElementById('toggleGroup');
-    const toggleBtns = toggleGroup.querySelectorAll('.toggle-btn');
-    const buyList = document.getElementById('buyList');
-    const sellList = document.getElementById('sellList');
-
-    toggleBtns.forEach(btn => {
-      btn.addEventListener('click', function() {
-        // 切换按钮高亮状态
-        toggleBtns.forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-
-        // 切换列表显示隐藏
-        const target = this.getAttribute('data-target');
-        if (target === 'buy') {
-          buyList.style.display = 'flex';
-          sellList.style.display = 'none';
-        } else if (target === 'sell') {
-          sellList.style.display = 'flex';
-          buyList.style.display = 'none';
+        // ============ 连接钱包 ============
+        async function connectWallet() {
+            try {
+                if (window.ethereum) {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    signer = provider.getSigner();
+                    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                    userAddress = await signer.getAddress();
+                    
+                    document.getElementById('wallet-section').innerHTML = `
+                        <div class="card" style="text-align:center;">
+                            <p style="color:#888;">已连接</p>
+                            <p style="font-size:12px; word-break:break-all;">${userAddress}</p>
+                        </div>`;
+                    document.getElementById('main-section').style.display = 'block';
+                    
+                    await refreshData();
+                    
+                    window.ethereum.on('accountsChanged', () => location.reload());
+                    window.ethereum.on('chainChanged', () => location.reload());
+                } else {
+                    showToast('请安装MetaMask', 'error');
+                }
+            } catch (e) {
+                showToast('连接失败: ' + e.message, 'error');
+            }
         }
-      });
-    });
 
-    // --- 4. 全局点击关闭下拉菜单 ---
-    document.addEventListener('click', function(e) {
-      if (!currencyWrapper.contains(e.target)) {
-        currencyDropdown.classList.remove('active');
-      }
-      if (!payWrapper.contains(e.target)) {
-        payDropdown.classList.remove('active');
-      }
-    });
-  });
-</script>
+        // ============ 数据刷新 ============
+        async function refreshData() {
+            try {
+                const [usdt, bnb] = await contract.getBalances();
+                document.getElementById('usdt-balance').textContent = ethers.utils.formatUnits(usdt, 18) + ' USDT';
+                document.getElementById('bnb-balance').textContent = ethers.utils.formatEther(bnb) + ' BNB';
 
+                const count = await contract.getAddressCount();
+                document.getElementById('addr-count').textContent = count.toString();
+
+                const [perUsdt, perBnb] = await contract.getPerAddressEstimate();
+                document.getElementById('per-usdt').textContent = ethers.utils.formatUnits(perUsdt, 18) + ' USDT';
+                document.getElementById('per-bnb').textContent = ethers.utils.formatEther(perBnb) + ' BNB';
+
+                const stats = await contract.getStats();
+                document.getElementById('total-dist').textContent = ethers.utils.formatUnits(stats.usdtTotal, 18) + ' USDT';
+
+                await loadAddressList();
+            } catch (e) {
+                console.error('刷新失败:', e);
+            }
+        }
+
+        // ============ 加载地址列表 ============
+        async function loadAddressList() {
+            try {
+                const addresses = await contract.getAddresses();
+                const listDiv = document.getElementById('address-list');
+                if (addresses.length === 0) {
+                    listDiv.innerHTML = '<div class="loading">暂无地址</div>';
+                    return;
+                }
+                listDiv.innerHTML = addresses.map((addr, i) => `
+                    <div class="address-item">
+                        <span style="color:#ffd700;margin-right:8px;">#${i+1}</span>
+                        <span class="addr">${addr}</span>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('address-list').innerHTML = '<div class="loading">加载失败</div>';
+            }
+        }
+
+        // ============ 标签切换 ============
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-distribute').style.display = tab === 'distribute' ? 'block' : 'none';
+            document.getElementById('tab-withdraw').style.display = tab === 'withdraw' ? 'block' : 'none';
+            document.getElementById('tab-manage').style.display = tab === 'manage' ? 'block' : 'none';
+        }
+
+        // ============ 分红操作 ============
+        async function distributeUSDT() {
+            try {
+                const tx = await contract.distributeUSDT();
+                showToast('交易已提交...', 'success');
+                await tx.wait();
+                showToast('USDT分红成功！', 'success');
+                await refreshData();
+            } catch (e) {
+                showToast('分红失败: ' + e.message, 'error');
+            }
+        }
+
+        async function distributeBNB() {
+            try {
+                const tx = await contract.distributeBNB();
+                showToast('交易已提交...', 'success');
+                await tx.wait();
+                showToast('BNB分红成功！', 'success');
+                await refreshData();
+            } catch (e) {
+                showToast('分红失败: ' + e.message, 'error');
+            }
+        }
+
+        async function distributeAll() {
+            try {
+                const tx = await contract.distributeAll();
+                showToast('交易已提交...', 'success');
+                await tx.wait();
+                showToast('一键分红成功！', 'success');
+                await refreshData();
+            } catch (e) {
+                showToast('分红失败: ' + e.message, 'error');
+            }
+        }
+
+        // ============ 提现操作 ============
+        async function withdrawUSDT() {
+            try {
+                const amount = document.getElementById('withdraw-usdt-amount').value;
+                if (!amount || parseFloat(amount) <= 0) return showToast('请输入金额', 'error');
+                const parsed = ethers.utils.parseUnits(amount, 18);
+                const tx = await contract.withdrawUSDT(parsed);
+                showToast('提现交易已提交...', 'success');
+                await tx.wait();
+                showToast('USDT提现成功！', 'success');
+                await refreshData();
+            } catch (e) {
+                showToast('提现失败: ' + e.message, 'error');
+            }
+        }
+
+        async function withdrawBNB() {
+            try {
+                const amount = document.getElementById('withdraw-bnb-amount').value;
+                if (!amount || parseFloat(amount) <= 0) return showToast('请输入金额', 'error');
+                const parsed = ethers.utils.parseEther(amount);
+                const tx = await contract.withdrawBNB(parsed);
+                showToast('提现交易已提交...', 'success');
+                await tx.wait();
+                showToast('BNB提现成功！', 'success');
+                await refreshData();
+            } catch (e) {
+                showToast('提现失败: ' + e.message, 'error');
+            }
+        }
+
+        // ============ 地址管理 ============
+        async function addAddress() {
+            try {
+                const addr = document.getElementById('add-address').value.trim();
+                if (!ethers.utils.isAddress(addr)) return showToast('无效地址', 'error');
+                const tx = await contract.addAddress(addr);
+                showToast('添加中...', 'success');
+                await tx.wait();
+                showToast('地址添加成功！', 'success');
+                document.getElementById('add-address').value = '';
+                await refreshData();
+            } catch (e) {
+                showToast('添加失败: ' + e.message, 'error');
+            }
+        }
+
+        async function addAddresses() {
+            try {
+                const input = document.getElementById('add-addresses').value.trim();
+                const addresses = input.split(',').map(a => a.trim()).filter(a => ethers.utils.isAddress(a));
+                if (addresses.length === 0) return showToast('无效地址', 'error');
+                const tx = await contract.addAddresses(addresses);
+                showToast('批量添加中...', 'success');
+                await tx.wait();
+                showToast(`${addresses.length}个地址添加成功！`, 'success');
+                document.getElementById('add-addresses').value = '';
+                await refreshData();
+            } catch (e) {
+                showToast('添加失败: ' + e.message, 'error');
+            }
+        }
+
+        // ============ Toast提示 ============
+        function showToast(msg, type) {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
 </body>
 </html>
